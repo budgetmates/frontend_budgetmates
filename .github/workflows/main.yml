@@ -1,0 +1,45 @@
+name: Flutter CI/CD with Artifacts and GitHub Releases
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.5'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi
+
+      # Upload APKs to GitHub Actions artifacts
+      - name: Upload APKs to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BudgetMate-apk
+          path: build/app/outputs/flutter-apk/
+
+      # Create GitHub Release and attach APKs
+      - name: Push to Releases
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: build/app/outputs/flutter-apk/*.apk
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
